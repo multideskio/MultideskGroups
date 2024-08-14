@@ -17,8 +17,8 @@ class SuperAdmin extends Seeder
 
         $sData = [
             'name' => 'MultiDesk',
-            'url_api_wa' => 'https://v5.multidesk.io',
-            'api_key_wa' => 'B6D711FCDE4D4FD5936544120E713976'
+            'url_api_wa' => 'https://evo2.conect.app',
+            'api_key_wa' => 'yi2f32pfkwfwavcc2y9penmh2rn9tiggv07pzjkl5wyig18jmq'
         ];
         $mSuper = new SuperModel();
         $idSuper = $mSuper->insert($sData);
