@@ -7,8 +7,6 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 
-
-
 //rotas sem proteção
 $routes->get('teste', 'Home::teste');
 
@@ -17,7 +15,7 @@ $routes->get('g/(:any)/(:any)', 'Home::group/$1/$2');
 $routes->post('teste', 'Home::teste');
 
 $routes->get('disconnected', 'Home::sair');
-$routes->get('sendtest',     'Home::sendtest');
+$routes->get('sendtest', 'Home::sendtest');
 $routes->get('lang/{locale}', 'Home::lang');
 
 //grupo login
@@ -28,10 +26,7 @@ $routes->group('login', static function ($routes) {
     $routes->post('signup', 'Auth::newuser');
 });
 
-
-
-
-//dashboard 
+//dashboard
 $routes->get('dashboard/block', 'Dashboard::block', ['filter' => \App\Filters\LoggedIn::class]);
 
 $routes->group('dashboard', ['filter' => [\App\Filters\LoggedIn::class, \App\Filters\PlanFilter::class]], static function ($routes) {
@@ -44,12 +39,9 @@ $routes->group('dashboard', ['filter' => [\App\Filters\LoggedIn::class, \App\Fil
 
     $routes->get('participants', 'Dashboard::participants');
 
-
     $routes->get('schedule/(:any)', 'Dashboard::scheduledsView/$1');
 
-
     $routes->get('send/(:any)', 'Dashboard::sendView/$1');
-
 
     $routes->get('instances', 'Dashboard::instance');
     $routes->get('files', 'Dashboard::files');
@@ -59,9 +51,7 @@ $routes->group('dashboard', ['filter' => [\App\Filters\LoggedIn::class, \App\Fil
     $routes->get('support', 'Dashboard::support');
     $routes->get('help', 'Dashboard::help');
 
-
     $routes->get('groups', 'Dashboard::groupsView');
-
 
     //perfil
     $routes->get('profile', 'Dashboard::index');
@@ -72,28 +62,25 @@ $routes->group('dashboard', ['filter' => [\App\Filters\LoggedIn::class, \App\Fil
     $routes->get('block', 'Dashboard::block');
 });
 
-
-
 //chatwoot frontend
 $routes->group('chatwoot', ['filter' => 'loggedchatwoot', 'namespace' => 'App\Controllers\Chatwoot'], static function ($routes) {
-    $routes->get('',          'Home::index');
-    $routes->get('home',      'Home::index');
+    $routes->get('', 'Home::index');
+    $routes->get('home', 'Home::index');
     $routes->get('campanhas', 'Home::campanhas');
     $routes->get('campanhas/(:num)', 'Home::campanhas/$1');
 });
 
 //API'S
 
-use API\Admin     as APIAdmin;
-use API\Campaigns as APICampaigns;
-use API\Config    as APIConfig;
-use API\Contacts  as APIContacts;
-use API\Groups    as APIGroups;
-use API\Instances as APIInstances;
-use API\Users     as APIUsers;
-use API\Messages  as APIMessages;
-use API\Webhook   as APIWebhook;
-use API\Participants   as APIParticipants;
+use App\Controllers\Api\Admin     as APIAdmin;
+use App\Controllers\Api\Campaigns as APICampaigns;
+use App\Controllers\Api\Config    as APIConfig;
+use App\Controllers\Api\Contacts  as APIContacts;
+use App\Controllers\Api\Groups    as APIGroups;
+use App\Controllers\Api\Instances as APIInstances;
+use App\Controllers\Api\Messages  as APIMessages;
+use App\Controllers\Api\Users     as APIUsers;
+use App\Controllers\Api\Webhook   as APIWebhook;
 
 $routes->get('api/v1/auth/(:any)/(:any)', 'API\Users::auth/$1/$2');
 
@@ -108,17 +95,16 @@ $routes->group('api/v1', ['filter' => 'logged'], static function ($routes) {
 
     $routes->get('datatable/particpants/(:num)', 'API\Participants::datatable/$1');
 
-    $routes->resource('admin',     ['controller' => APIAdmin::class]);     //
-    $routes->resource('webhook',   ['controller' => APIWebhook::class]);   //
-    $routes->resource('contacts',  ['controller' => APIContacts::class]);  //
-    $routes->resource('config',    ['controller' => APIConfig::class]);    //
+    $routes->resource('admin', ['controller' => APIAdmin::class]);     //
+    $routes->resource('webhook', ['controller' => APIWebhook::class]);   //
+    $routes->resource('contacts', ['controller' => APIContacts::class]);  //
+    $routes->resource('config', ['controller' => APIConfig::class]);    //
 
     //Busca slugs existentes
     $routes->get('campaigns/slug/(:any)', 'API\Campaigns::verifySlug/$1');
 
-
     $routes->resource('campaigns', ['controller' => APICampaigns::class]); //
-    $routes->resource('messages',  ['controller' => APIMessages::class]);  //
+    $routes->resource('messages', ['controller' => APIMessages::class]);  //
 
     $routes->group('groups', ['namespace' => 'App\Controllers'], static function ($routes) {
         $routes->post('send', 'API\Groups::sendMessage');
@@ -127,7 +113,7 @@ $routes->group('api/v1', ['filter' => 'logged'], static function ($routes) {
         $routes->post('scheduleds', 'API\Groups::scheduleds');
     });    //
 
-    $routes->resource('groups',    ['controller' => APIGroups::class]);
+    $routes->resource('groups', ['controller' => APIGroups::class]);
 
     $routes->resource('instances', ['controller' => APIInstances::class]); //
     $routes->group('instances', static function ($routes) {
@@ -136,7 +122,7 @@ $routes->group('api/v1', ['filter' => 'logged'], static function ($routes) {
         $routes->post('conectar', 'API\Instances::conectar'); //
     });
 
-    $routes->resource('users',     ['controller' => APIUsers::class]);     //
+    $routes->resource('users', ['controller' => APIUsers::class]);     //
 
     //
 });
