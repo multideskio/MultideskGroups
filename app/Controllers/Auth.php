@@ -54,14 +54,21 @@ class Auth extends BaseController
                 // Autenticação bem-sucedida
                 // Redirecione o usuário para a página de sucesso ou execute outras ações necessárias
             }
+        }catch (\ReflectionException $e){
+            // Trata erros de autenticação
+            $errorMessage = $e->getMessage();
+            $this->session->setFlashdata('error', $errorMessage);
+            // Redirecionar de volta para a página anterior
+            return redirect()->back();
         } catch (\Exception $e) {
             // Trata erros de autenticação
             $errorMessage = $e->getMessage();
-            
             $this->session->setFlashdata('error', $errorMessage);
             // Redirecionar de volta para a página anterior
             return redirect()->back();
             // Exiba a mensagem de erro para o usuário ou realize outras ações necessárias
         }
+
+        return redirect()->to(site_url('dashboard'));
     }
 }

@@ -5,19 +5,23 @@ namespace App\Services;
 use App\Models\InstanceModel;
 use App\Models\PlanModel;
 use App\Models\SuperModel;
+use Config\Services;
+use JsonException;
+use ReflectionException;
+use RuntimeException;
 
 class InstanceService
 {
 
-    protected $apiCredentials;
-    protected $superModel;
-    protected $sessionData;
-    protected $instanceModel;
-    protected $httpClient;
+    protected array|null|object $apiCredentials;
+    protected SuperModel $superModel;
+    protected string|int|bool|array|null|object|float $sessionData;
+    protected InstanceModel $instanceModel;
+    protected \CodeIgniter\HTTP\CURLRequest $httpClient;
 
     public function __construct()
     {
-        $this->httpClient     = \Config\Services::curlrequest();
+        $this->httpClient     = Services::curlrequest();
         $this->instanceModel  = new InstanceModel();
         $this->superModel     = new SuperModel();
         $this->sessionData    = session('user');
@@ -28,24 +32,24 @@ class InstanceService
     /**
      * Verifica se as instâncias do plano estão criadas e atualiza se necessário.
      */
-    public function verifyPlan()
+    public function verifyPlan(): void
     {
         $planModel = new PlanModel();
-
         $configuredPlan = $planModel->select('num_instance')->where('id_company', $this->sessionData['company'])->findAll();
         $createdInstances = $this->instanceModel->where('id_company', $this->sessionData['company'])->findAll();
 
         if (!count($configuredPlan)) {
-            throw new \Exception('Plano não configurado para a empresa.');
+            log_message('error', __LINE__.'Instance not configured');
+            throw new RuntimeException('Plano não configurado para a empresa.');
         }
 
-        if ($configuredPlan[0]['num_instance'] == count($createdInstances)) {
+        if ($configuredPlan[0]['num_instance'] === count($createdInstances)) {
+            log_message('info', __LINE__.'Update instances');
             $this->updateInstances();
         } elseif ($configuredPlan[0]['num_instance'] > count($createdInstances)) {
+            log_message('info', __LINE__.'Create instances');
             $numInstancesToCreate = $configuredPlan[0]['num_instance'] - count($createdInstances);
-            return $this->createInstances($numInstancesToCreate);
-        } else {
-            // Excluir instâncias para manter o plano ativo
+            return;
         }
     }
 
@@ -54,9 +58,10 @@ class InstanceService
      *
      * @param int $numInstances Número total de instâncias para criar.
      */
-    public function createInstances($numInstances)
+    public function createInstances(int $numInstances): void
     {
         $apiUrl = "{$this->apiCredentials['url']}/instance/create";
+
         $headers = [
             'Accept'       => '*/*',
             'apikey'       => $this->apiCredentials['key'],
@@ -65,7 +70,7 @@ class InstanceService
 
         $responseBodies = [];
         for ($i = 0; $i < $numInstances; $i++) {
-            $instanceName = uniqid() . $this->sessionData['company'];
+            $instanceName = uniqid('in', true) . $this->sessionData['company'];
             $postPayload = [
                 "instanceName" => $instanceName,
                 "qrcode" => false,
@@ -95,15 +100,18 @@ class InstanceService
                     // "NEW_JWT_TOKEN"
                 ]
             ];
-
             $response = $this->httpClient->request('POST', $apiUrl, [
                 'headers' => $headers,
                 'json' => $postPayload
             ]);
-
-            $responseBodies[] = json_decode($response->getBody(), true);
+            try {
+                $responseBodies[] = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+                log_message('info', __LINE__. ' '. json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR));
+            } catch (JsonException $e) {
+                log_message('error', $e->getMessage());
+            }
         }
-
+        log_message('info', __LINE__. 'Create instances database');
         $this->insertInstanceData($responseBodies);
     }
 
@@ -112,7 +120,7 @@ class InstanceService
      *
      * @param array $responseData Dados a serem inseridos.
      */
-    public function insertInstanceData(array $responseData)
+    public function insertInstanceData(array $responseData): void
     {
         $insertData = [];
 
@@ -125,7 +133,11 @@ class InstanceService
             ];
         }
 
-        $this->instanceModel->insertBatch($insertData);
+        try {
+            $this->instanceModel->insertBatch($insertData);
+        } catch (ReflectionException $e) {
+            log_message('error', $e->getMessage());
+        }
     }
 
     /**

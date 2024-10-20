@@ -4,8 +4,9 @@ namespace App\Services;
 
 use App\Models\CompanyModel;
 use App\Models\PlanModel;
-use App\Models\SuperModel;
 use App\Models\UserModel;
+use Exception;
+use RuntimeException;
 
 class AuthService
 {
@@ -14,20 +15,28 @@ class AuthService
 
     public function __construct($inputs, UserModel $userModel)
     {
-        $this->inputs = $inputs;
+        $this->inputs    = $inputs;
         $this->userModel = $userModel;
         helper('response');
     }
 
-    public function authenticate()
+    public function authenticate(): bool
     {
+        log_message('info', 'Auth iniciado');
+
         // Verificar se os campos foram preenchidos
         if (empty($this->inputs['username'])) {
-            throw new \Exception(lang('General.errosLogin.notEmail'));
+            log_message('debug', 'Preencha o campo username');
+
+            throw new RuntimeException(lang('General.errosLogin.notEmail'));
+
         }
 
         if (empty($this->inputs['password'])) {
-            throw new \Exception(lang('General.errosLogin.notPassword'));
+            log_message('debug', 'Preencha o campo password');
+
+            throw new RuntimeException(lang('General.errosLogin.notPassword'));
+
         }
 
         $email    = $this->inputs['username'];
@@ -38,12 +47,15 @@ class AuthService
         $user = $this->userModel->where('email', $email)->first();
 
         if (!$user) {
-            throw new \Exception(lang('General.errosLogin.errorEmail'));
+            log_message('debug', 'Usuário não encontrado');
+
+            throw new RuntimeException(lang('General.errosLogin.errorEmail'));
+
         }
 
         // Comparar a senha usando o hash armazenado no banco de dados
         if (!password_verify($password, $user['password'])) {
-            throw new \Exception(lang('General.errosLogin.errorPassword'));
+            throw new RuntimeException(lang('General.errosLogin.errorPassword'));
         }
 
         if ($remember) {
@@ -58,36 +70,43 @@ class AuthService
             delete_cookie('user_auto');
         }
 
-        $verifyPlan = $this->verifyPlan($user['id_company']);
+        try {
+            $verifyPlan = $this->verifyPlan($user['id_company']);
+        } catch (Exception $e) {
+            throw new RuntimeException('Error: ' . $e->getMessage());
+        }
         //Retorna dados do super admin
         $mCompany = new CompanyModel();
-        $id = $mCompany->select('id_admin')->find($user['id_company']);
+        $id       = $mCompany->select('id_admin')->find($user['id_company']);
         // Preparar dados para a sessão
         $dataSession = [
-            'isConnected' => true,
-            'id' => intval($user['id']),
-            'company' => intval($user['id_company']),
-            'name' => $user['name'],
-            'fone' => $user['wa_number'],
-            'email' => $user['email'],
-            'permission' => intval($user['permission']),
-            'status' => intval($user['status']),
-            'image' => $user['image'] ?: null,
-            'control' => $id['id_admin'],
-            'daysRemaining' => $verifyPlan
+            'isConnected'   => true,
+            'id'            => (int)$user['id'],
+            'company'       => (int)$user['id_company'],
+            'name'          => $user['name'],
+            'fone'          => $user['wa_number'],
+            'email'         => $user['email'],
+            'permission'    => (int)$user['permission'],
+            'status'        => (int)$user['status'],
+            'image'         => $user['image'] ?: null,
+            'control'       => $id['id_admin'],
+            'daysRemaining' => $verifyPlan,
         ];
 
         // Gravar dados na sessão
         session()->set(['user' => $dataSession]);
 
+        log_message('debug', 'Login successful');
+
         // Autenticação bem-sucedida
         return true;
     }
+
     private function verifyPlan($company)
     {
         $mPlan = new PlanModel();
 
-        $build   = $mPlan->where('id_company', $company)->findAll();
+        $build = $mPlan->where('id_company', $company)->findAll();
 
         if (count($build) == 0) {
             throw new \Exception(lang('Validation.plan.0'));
@@ -100,22 +119,22 @@ class AuthService
         $row = $build[0];
 
         // Exemplo de uso
-        $dataCompra = $row['payday'];
+        $dataCompra        = $row['payday'];
         $diasParaAdicionar = $row['valid_days'];
 
         /*session()->set(['user' => [
             'vencimento' => add_days_to_purchase_date($dataCompra, $diasParaAdicionar),
         ]]);*/
-        
+
         $dataValidade = add_days_to_purchase_date($dataCompra, $diasParaAdicionar);
-        
+
         if (is_plan_expired($dataValidade)) {
             throw new \Exception(lang('Validation.plan.vencido.0'));
         }
-        
+
         return days_until_expiry($dataValidade);
     }
-    
+
     public function createAccount()
     {
     }
