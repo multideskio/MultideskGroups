@@ -13,6 +13,9 @@
  | NOTE: changing this will require manually modifying the
  | existing namespaces of App\* namespaced-classes.
  */
+
+defined('CI_DEBUG') || define('CI_DEBUG', getenv('CI_ENVIRONMENT') !== 'production');
+
 defined('APP_NAMESPACE') || define('APP_NAMESPACE', 'App');
 
 /*
