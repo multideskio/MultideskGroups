@@ -1,0 +1,109 @@
+version: "3.7"
+
+services:
+  mysql_groups:
+    image: mysql:8.0
+    networks:
+      - groups_net
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data_groups:/var/lib/mysql  # Volume persistente
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+    environment:
+      MYSQL_ROOT_PASSWORD: "senhaSuperSecreta"
+      MYSQL_DATABASE: "ci4group"
+      MYSQL_USER: "ci4dbuser"
+      MYSQL_PASSWORD: "senhaSuperSecreta"
+    command: >
+      --max_allowed_packet=64M
+      --wait_timeout=28800
+      --interactive_timeout=28800
+
+  redis_groups:
+    image: redis:6.2
+    command: >
+      redis-server 
+      --appendonly yes
+      --port 6379
+      --bind 0.0.0.0
+      --logfile /data/redis-server.log
+      --dir /data
+      --tcp-keepalive 60
+      --timeout 300
+      --maxmemory 400mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data_groups:/data
+    networks:
+      - groups_net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    ports:
+      - "6384:6379"
+    restart: always
+
+  groups:
+    depends_on:
+      - mysql_groups
+      - redis_groups
+    image: multideskio/ci4:php-8.2
+    networks:
+      - groups_net
+    ports:
+      - "8585:80"  # Porta do WebSocket mapeada
+      - "8088:8088"  # Porta do WebSocket mapeada
+    environment:
+      - CI4_GIT_REPO=https://github.com/paulo846/Conecte_grupos.git
+      - CI_ENVIRONMENT=development
+      - MIGRATIONS=true
+      - app_baseURL=https://grupos.multidesk.io
+      - database_default_hostname=mysql_groups
+      - database_default_database=ci4group
+      - database_default_username=ci4dbuser
+      - database_default_password=senhaSuperSecreta
+      - database_default_DBDriver=MySQLi
+      - database_default_DBPrefix=
+      - database_default_port=3306
+      - session_driver=CodeIgniter\Session\Handlers\RedisHandler
+      - session_cookieName=ci_sessions
+      - session_expiration=7200
+      - session_savePath=tcp://redis_groups:6379/2
+      - session_matchIP=false
+      - session_timeToUpdate=300
+      - session_regenerateDestroy=false
+      - logger.threshold=4
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    restart: always
+
+networks:
+  groups_net:
+    driver: overlay
+
+volumes:
+  mysql_data_groups:
+    labels:
+      description: "Volume for MySQL data"
+  redis_data_groups:
+    labels:
+      description: "Volume for Redis data"
