@@ -7,10 +7,11 @@ use App\Models\PlanModel;
 use App\Models\SuperModel;
 use App\Models\UserModel;
 use CodeIgniter\Database\Seeder;
+use ReflectionException;
 
 class SuperAdmin extends Seeder
 {
-    public function run()
+    public function run(): void
     {
         //
         helper('response');
@@ -20,21 +21,34 @@ class SuperAdmin extends Seeder
             'url_api_wa' => 'https://evo2.conect.app',
             'api_key_wa' => 'yi2f32pfkwfwavcc2y9penmh2rn9tiggv07pzjkl5wyig18jmq'
         ];
+
         $mSuper = new SuperModel();
-        $idSuper = $mSuper->insert($sData);
+
+        try {
+            $idSuper = $mSuper->insert($sData);
+        } catch (ReflectionException $e) {
+            return;
+        }
 
         echo "Super criado! \n";
-        //
+
         $cData = [
             'id_admin' => $idSuper,
             'name' => 'Paulo Henrique',
             'company' => 'MultiDesk',
             'email' => 'igrsysten@gmail.com',
         ];
+
         $mCompany = new CompanyModel();
-        $idCompany = $mCompany->insert($cData);
+
+        try {
+            $idCompany = $mCompany->insert($cData);
+        } catch (ReflectionException $e) {
+            return;
+        }
+
         echo "Company criado!\n";
-        //
+
         $uData = [
             [
                 'id_company' => $idCompany,
@@ -61,9 +75,13 @@ class SuperAdmin extends Seeder
         ];
 
         $mUser = new UserModel();
-        $mUser->insertBatch($uData);
-        echo "Users Criados!\n";
 
+        try {
+            $mUser->insertBatch($uData);
+        } catch (ReflectionException $e) {
+            return;
+        }
+        echo "Users Criados!\n";
 
         $pData = [
             'id_company' => $idCompany,
@@ -77,10 +95,16 @@ class SuperAdmin extends Seeder
         ];
 
         $mPlan = new PlanModel();
-        $mPlan->insert($pData);
+
+        try {
+            $mPlan->insert($pData);
+        } catch (ReflectionException $e) {
+            log_message('error', $e->getMessage());
+        }
+
         echo "Plano criado!\n\n";
 
-
         echo "Todas as ações foram realizadas com sucesso! \n";
+
     }
 }
