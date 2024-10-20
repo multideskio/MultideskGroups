@@ -72,15 +72,15 @@ $routes->group('chatwoot', ['filter' => 'loggedchatwoot', 'namespace' => 'App\Co
 
 //API'S
 
-use App\Controllers\Api\Admin     as APIAdmin;
-use App\Controllers\Api\Campaigns as APICampaigns;
-use App\Controllers\Api\Config    as APIConfig;
-use App\Controllers\Api\Contacts  as APIContacts;
-use App\Controllers\Api\Groups    as APIGroups;
-use App\Controllers\Api\Instances as APIInstances;
-use App\Controllers\Api\Messages  as APIMessages;
-use App\Controllers\Api\Users     as APIUsers;
-use App\Controllers\Api\Webhook   as APIWebhook;
+use API\Admin     as APIAdmin;
+use API\Campaigns as APICampaigns;
+use API\Config    as APIConfig;
+use API\Contacts  as APIContacts;
+use API\Groups    as APIGroups;
+use API\Instances as APIInstances;
+use API\Messages  as APIMessages;
+use API\Users     as APIUsers;
+use API\Webhook   as APIWebhook;
 
 $routes->get('api/v1/auth/(:any)/(:any)', 'API\Users::auth/$1/$2');
 
