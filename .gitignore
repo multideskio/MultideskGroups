@@ -124,7 +124,6 @@ nb-configuration.xml
 /results/
 /phpunit*.xml
 /.phpunit.*.cache
-app/Config/App.php
 
 .docker
 /.docker
