@@ -1,0 +1,9 @@
+POST https://evo1.conect.app/instance/create
+Content-Type: application/json
+apikey: c7aa3b828f96f286ef7cd6dff9e02f984f8
+
+{
+    "instanceName": "teste_create",
+    "integration": "WHATSAPP-BAILEYS",
+    "token" : "ncionoabfiafjkanfovnao"
+}

@@ -6,6 +6,7 @@ use App\Models\InstanceModel;
 use App\Models\PlanModel;
 use App\Models\SuperModel;
 use Config\Services;
+use Exception;
 use JsonException;
 use ReflectionException;
 use RuntimeException;
@@ -35,24 +36,29 @@ class InstanceService
     public function verifyPlan(): void
     {
         $planModel = new PlanModel();
+
         $configuredPlan = $planModel->select('num_instance')->where('id_company', $this->sessionData['company'])->findAll();
+
         $createdInstances = $this->instanceModel->where('id_company', $this->sessionData['company'])->findAll();
 
         if (!count($configuredPlan)) {
             log_message('error', __LINE__.'Instance not configured');
             throw new RuntimeException('Plano não configurado para a empresa.');
         }
+        log_message('info', 'Plano configurado para a empresa.');
 
         if ($configuredPlan[0]['num_instance'] === count($createdInstances)) {
             log_message('info', __LINE__.'Update instances');
+
             $this->updateInstances();
+
         } elseif ($configuredPlan[0]['num_instance'] > count($createdInstances)) {
             log_message('info', __LINE__.'Create instances');
             $numInstancesToCreate = $configuredPlan[0]['num_instance'] - count($createdInstances);
+            $this->createInstances($numInstancesToCreate);
             return;
         }
     }
-
     /**
      * Cria novas instâncias.
      *
@@ -60,7 +66,7 @@ class InstanceService
      */
     public function createInstances(int $numInstances): void
     {
-        $apiUrl = "{$this->apiCredentials['url']}/instance/create";
+        $apiUrl = $this->apiCredentials['url']."/instance/create";
 
         $headers = [
             'Accept'       => '*/*',
@@ -69,12 +75,18 @@ class InstanceService
         ];
 
         $responseBodies = [];
+
+        log_message('info', 'Tentando criar instances');
+
         for ($i = 0; $i < $numInstances; $i++) {
             $instanceName = uniqid('in', true) . $this->sessionData['company'];
+
+            log_message('info', "$instanceName - instancia");
             $postPayload = [
                 "instanceName" => $instanceName,
                 "qrcode" => false,
-                "webhook" => site_url("api/v1/webhook/{$instanceName}"),
+                "token" => "",
+                "webhook" => site_url("api/v1/webhook/$instanceName"),
                 "webhook_by_events" => false,
                 "events" => [
                     // "APPLICATION_STARTUP",
@@ -100,13 +112,19 @@ class InstanceService
                     // "NEW_JWT_TOKEN"
                 ]
             ];
-            $response = $this->httpClient->request('POST', $apiUrl, [
-                'headers' => $headers,
-                'json' => $postPayload
-            ]);
+
             try {
-                $responseBodies[] = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-                log_message('info', __LINE__. ' '. json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR));
+                $response = $this->httpClient->request('POST', $apiUrl, [
+                    'headers' => $headers,
+                    'json' => $postPayload
+                ]);
+            } catch (Exception $e) {
+                log_message('error', $e->getMessage());
+            }
+
+            try {
+                $responseBodies[] = json_decode($response->getBody(), true);
+                //log_message('info', __LINE__. ' '. json_decode($response->getBody(), true));
             } catch (JsonException $e) {
                 log_message('error', $e->getMessage());
             }
@@ -158,7 +176,7 @@ class InstanceService
         $response = $this->httpClient->request('GET', $apiUrl, [
             'headers' => $headers,
         ]);
-        
+
 
         return json_decode($response->getBody(), true);
     }

@@ -6,6 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\UserModel;
 use App\Services\AuthService;
 use App\Services\InstanceService;
+use Exception;
+use ReflectionException;
 
 /**
  * CONTROLLER SEM PROTEÇÃO POR SENHA
@@ -15,13 +17,13 @@ class Auth extends BaseController
     /**
      * ROUTE LOGIN
      */
-    public function index()
+    public function index(): string
     {
         //
         return view('admin/login/home');
     }
 
-    public function signup()
+    public function signup(): string
     {
         return view('admin/login/signup');
     }
@@ -29,38 +31,38 @@ class Auth extends BaseController
     /**
      * ROUTE POST LOGIN SIGNUP
      */
-    public function newuser()
+    public function newuser(): void
     {
-        echo "<pre>";
-
-        print_r($this->request->getPost());
+        //print_r($this->request->getPost());
     }
 
     /**
      * ROUTE POST LOGIN
      */
-    public function auth()
+    public function auth(): \CodeIgniter\HTTP\RedirectResponse
     {
         $userModel   = new UserModel();
         $input       = $this->request->getPost();
         $authService = new AuthService($input, $userModel);
         try {
-            // Tenta autenticar o usuário
+
             $authenticated = $authService->authenticate();
+
             if ($authenticated) {
                 $instanceService = new InstanceService();
                 $instanceService->verifyPlan();
                 return redirect()->to(site_url('dashboard'));
-                // Autenticação bem-sucedida
-                // Redirecione o usuário para a página de sucesso ou execute outras ações necessárias
             }
-        }catch (\ReflectionException $e){
+
+            return redirect()->to(site_url('login'));
+
+        }catch (ReflectionException $e){
             // Trata erros de autenticação
             $errorMessage = $e->getMessage();
             $this->session->setFlashdata('error', $errorMessage);
             // Redirecionar de volta para a página anterior
             return redirect()->back();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Trata erros de autenticação
             $errorMessage = $e->getMessage();
             $this->session->setFlashdata('error', $errorMessage);
@@ -69,6 +71,7 @@ class Auth extends BaseController
             // Exiba a mensagem de erro para o usuário ou realize outras ações necessárias
         }
 
+        /** @noinspection PhpUnreachableStatementInspection */
         return redirect()->to(site_url('dashboard'));
     }
 }

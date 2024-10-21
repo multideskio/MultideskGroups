@@ -10,10 +10,10 @@ use RuntimeException;
 
 class AuthService
 {
-    protected $inputs;
-    protected $userModel;
+    protected array $inputs;
+    protected UserModel $userModel;
 
-    public function __construct($inputs, UserModel $userModel)
+    public function __construct(array $inputs, UserModel $userModel)
     {
         $this->inputs    = $inputs;
         $this->userModel = $userModel;
@@ -29,14 +29,12 @@ class AuthService
             log_message('debug', 'Preencha o campo username');
 
             throw new RuntimeException(lang('General.errosLogin.notEmail'));
-
         }
 
         if (empty($this->inputs['password'])) {
             log_message('debug', 'Preencha o campo password');
 
             throw new RuntimeException(lang('General.errosLogin.notPassword'));
-
         }
 
         $email    = $this->inputs['username'];
@@ -50,7 +48,6 @@ class AuthService
             log_message('debug', 'Usuário não encontrado');
 
             throw new RuntimeException(lang('General.errosLogin.errorEmail'));
-
         }
 
         // Comparar a senha usando o hash armazenado no banco de dados
@@ -71,10 +68,12 @@ class AuthService
         }
 
         try {
+            log_message('info', 'Verificando plano..');
             $verifyPlan = $this->verifyPlan($user['id_company']);
         } catch (Exception $e) {
             throw new RuntimeException('Error: ' . $e->getMessage());
         }
+
         //Retorna dados do super admin
         $mCompany = new CompanyModel();
         $id       = $mCompany->select('id_admin')->find($user['id_company']);
@@ -102,21 +101,18 @@ class AuthService
         return true;
     }
 
-    private function verifyPlan($company)
+    private function verifyPlan($company): bool|int
     {
         $mPlan = new PlanModel();
+        $build = $mPlan->where('id_company', $company)->first();
 
-        $build = $mPlan->where('id_company', $company)->findAll();
+        if (!$build) {
+            log_message('debug', lang('Validation.plan.0'));
 
-        if (count($build) == 0) {
-            throw new \Exception(lang('Validation.plan.0'));
+            throw new RuntimeException(lang('Validation.plan.0'));
         }
 
-        if (count($build) > 1) {
-            throw new \Exception(lang('Validation.plan.1', ['idCompany' => $company]));
-        }
-
-        $row = $build[0];
+        $row = $build;
 
         // Exemplo de uso
         $dataCompra        = $row['payday'];
@@ -129,13 +125,17 @@ class AuthService
         $dataValidade = add_days_to_purchase_date($dataCompra, $diasParaAdicionar);
 
         if (is_plan_expired($dataValidade)) {
-            throw new \Exception(lang('Validation.plan.vencido.0'));
+            log_message('debug', lang('Validation.plan.vencido.1'));
+
+            throw new RuntimeException(lang('Validation.plan.vencido.0'));
         }
+
+        log_message('debug', 'Verificação de plano concluída.');
 
         return days_until_expiry($dataValidade);
     }
 
-    public function createAccount()
+    public function createAccount(): void
     {
     }
 }

@@ -17,9 +17,9 @@ class SuperAdmin extends Seeder
         helper('response');
 
         $sData = [
-            'name' => 'MultiDesk',
-            'url_api_wa' => 'https://evo2.conect.app',
-            'api_key_wa' => 'yi2f32pfkwfwavcc2y9penmh2rn9tiggv07pzjkl5wyig18jmq'
+            'name'       => 'MultiDesk',
+            'url_api_wa' => '',
+            'api_key_wa' => '',
         ];
 
         $mSuper = new SuperModel();
@@ -27,6 +27,8 @@ class SuperAdmin extends Seeder
         try {
             $idSuper = $mSuper->insert($sData);
         } catch (ReflectionException $e) {
+            log_message('error', $e->getMessage());
+
             return;
         }
 
@@ -34,9 +36,9 @@ class SuperAdmin extends Seeder
 
         $cData = [
             'id_admin' => $idSuper,
-            'name' => 'Paulo Henrique',
-            'company' => 'MultiDesk',
-            'email' => 'igrsysten@gmail.com',
+            'name'     => 'Paulo Henrique',
+            'company'  => 'MultiDesk',
+            'email'    => 'igrsysten@gmail.com',
         ];
 
         $mCompany = new CompanyModel();
@@ -44,6 +46,8 @@ class SuperAdmin extends Seeder
         try {
             $idCompany = $mCompany->insert($cData);
         } catch (ReflectionException $e) {
+            log_message('error', $e->getMessage());
+
             return;
         }
 
@@ -52,25 +56,25 @@ class SuperAdmin extends Seeder
         $uData = [
             [
                 'id_company' => $idCompany,
-                'name' => 'Paulo Henrique',
-                'wa_number' => '5562981154120',
-                'email' => 'contato@multidesk.io',
-                'level' => 'superadmin',
+                'name'       => 'Paulo Henrique',
+                'wa_number'  => '5562981154120',
+                'email'      => 'contato@multidesk.io',
+                'level'      => 'superadmin',
                 'permission' => 1,
-                'status' => true,
-                'password' => password_hash('mudar@123', PASSWORD_BCRYPT),
-                'token' => randomSerial()
+                'status'     => true,
+                'password'   => password_hash('mudar@123', PASSWORD_BCRYPT),
+                'token'      => randomSerial(),
             ],
             [
                 'id_company' => $idCompany,
-                'name' => 'Paulo Henrique',
-                'wa_number' => '5562981154120',
-                'email' => 'igrsysten@gmail.com',
-                'level' => 'admin',
+                'name'       => 'Paulo Henrique',
+                'wa_number'  => '5562981154120',
+                'email'      => 'igrsysten@gmail.com',
+                'level'      => 'admin',
                 'permission' => 2,
-                'status' => true,
-                'password' => password_hash('mudar@123', PASSWORD_BCRYPT),
-                'token' => randomSerial()
+                'status'     => true,
+                'password'   => password_hash('mudar@123', PASSWORD_BCRYPT),
+                'token'      => randomSerial(),
             ],
         ];
 
@@ -79,32 +83,28 @@ class SuperAdmin extends Seeder
         try {
             $mUser->insertBatch($uData);
         } catch (ReflectionException $e) {
+            log_message('error', $e->getMessage());
+
             return;
         }
         echo "Users Criados!\n";
-
         $pData = [
-            'id_company' => $idCompany,
-            'id_user' => 1,
+            'id_company'   => $idCompany,
+            'id_user'      => 1,
             'num_instance' => 3,
-            'valid_days' => 365,
-            'payday' => date('Y-m-d'),
-            'price' => 0,
-            'status' => true,
-            'size_files' => 200
+            'valid_days'   => 365,
+            'payday'       => date('Y-m-d'),
+            'price'        => 0,
+            'status'       => true,
+            'size_files'   => 200,
         ];
-
         $mPlan = new PlanModel();
-
         try {
             $mPlan->insert($pData);
         } catch (ReflectionException $e) {
             log_message('error', $e->getMessage());
         }
-
         echo "Plano criado!\n\n";
-
         echo "Todas as ações foram realizadas com sucesso! \n";
-
     }
 }
