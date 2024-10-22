@@ -17,9 +17,9 @@ class SuperAdmin extends Seeder
         helper('response');
 
         $sData = [
-            'name'       => 'MultiDesk',
-            'url_api_wa' => '',
-            'api_key_wa' => '',
+            'name'       => 'MultiDeskIo',
+            'url_api_wa' => 'https://evo2.conect.app',
+            'api_key_wa' => 'yi2f32pfkwfwavcc2y9penmh2rn9tiggv07pzjkl5wyig18jmq',
         ];
 
         $mSuper = new SuperModel();
