@@ -12,8 +12,8 @@ class Groups_Libraries
 
     public function __construct($apiUrl, $apiKey, $instance)
     {
-        $this->apiUrl = $apiUrl;
-        $this->apiKey = $apiKey;
+        $this->apiUrl   = $apiUrl;
+        $this->apiKey   = $apiKey;
         $this->instance = $instance;
         helper(['whatsapp', 'response']);
     }
@@ -25,11 +25,11 @@ class Groups_Libraries
             $url = "{$this->apiUrl}/group/fetchAllGroups/{$this->instance}?getParticipants={$listParticipants}";
 
             // Definir os cabeçalhos da requisição
-            $headers = array(
-                'headers' => array(
-                    'apikey' => $this->apiKey
-                )
-            );
+            $headers = [
+                'headers' => [
+                    'apikey' => $this->apiKey,
+                ],
+            ];
 
             // Crie uma instância do cliente cURL do CodeIgniter 4
             $client = \Config\Services::curlrequest();
@@ -48,32 +48,28 @@ class Groups_Libraries
         }
     }
 
-
-
     public function createGroups(array $numbers, string $name, string $description = null)
     {
         $url = "{$this->apiUrl}/group/create/{$this->instance}";
 
         // Definir os cabeçalhos da requisição
         // Definir os cabeçalhos da requisição na ordem desejada
-        $headers = array(
-            'Accept' =>  '*/*',
-            'apikey' => $this->apiKey,
+        $headers = [
+            'Accept'       => '*/*',
+            'apikey'       => $this->apiKey,
             'Content-Type' => 'application/json',
-            'user-agent' => "CI4"
-        );
+            'user-agent'   => "CI4",
+        ];
 
         // Limpar os números de telefone no array usando array_walk
         cleanPhoneNumber($numbers);
 
         $posts = [
-            "subject" => $name,
-            "description" => ($description) ? $description : '',
+            "subject"      => $name,
+            "description"  => ($description) ? $description : '',
             "participants" => $numbers,
 
         ];
-
-
 
         // Crie uma instância do cliente cURL do CodeIgniter 4
         $client = \Config\Services::curlrequest();
@@ -81,7 +77,7 @@ class Groups_Libraries
         // Enviar a solicitação POST
         $response = $client->request('POST', $url, [
             'headers' => $headers,
-            'json' => $posts
+            'json'    => $posts,
         ]);
 
         // Obter o corpo da resposta como string
@@ -93,14 +89,14 @@ class Groups_Libraries
 
     public function sendMessage(array $listaDestino, string $message, string $archive, bool $mentions = true): array
     {
-        $json = array(); // Inicializa a variável $json como um array vazio
+        $json = []; // Inicializa a variável $json como um array vazio
 
-        $headers = array(
-            'Accept' => '*/*',
-            'apikey' => $this->apiKey,
+        $headers = [
+            'Accept'       => '*/*',
+            'apikey'       => $this->apiKey,
             'Content-Type' => 'application/json',
-            'user-agent' => "CI4"
-        );
+            'user-agent'   => "CI4",
+        ];
 
         $client = \Config\Services::curlrequest();
 
@@ -110,6 +106,7 @@ class Groups_Libraries
             if (!empty($archive)) {
                 // Lógica para determinar o tipo de arquivo e enviar mensagem correspondente
                 $extension = getExtensionFromUrl($archive);
+
                 switch ($extension) {
                     case 'jpg':
                     case 'png':
@@ -117,25 +114,30 @@ class Groups_Libraries
                         $apiUrl = "{$this->apiUrl}/message/sendMedia/{$this->instance}";
                         $posts  = createImageMessage($destino, $message, $archive);
                         break;
+
                     case 'mp4':
                         $apiUrl = "{$this->apiUrl}/message/sendMedia/{$this->instance}";
                         $posts  = createVideoMessage($destino, $message, $archive);
                         break;
+
                     case 'xlsx':
                         $apiUrl = "{$this->apiUrl}/message/sendMedia/{$this->instance}";
                         $posts  = createXlsxDocumentMessage($destino, 'arquivo.xlsx', $message, $archive);
                         break;
+
                     case 'zip':
                         $apiUrl = "{$this->apiUrl}/message/sendMedia/{$this->instance}";
                         $posts  = createZipDocumentMessage($destino, 'aqruivo.zip', $message, $archive);
                         break;
+
                     case 'pdf':
                         $apiUrl = "{$this->apiUrl}/message/sendMedia/{$this->instance}";
                         $posts  = createPdfDocumentMessage($destino, 'arquivo.pdf', $message, $archive);
                         break;
+
                     case 'mp3':
                     case 'ogg':
-                        $apiUrl = "{$this->apiUrl}/message/sendMedia/{$this->instance}";
+                        $apiUrl = "{$this->apiUrl}/message/sendWhatsAppAudio/{$this->instance}";
                         $posts  = createAudioMessage($destino, $archive);
                         break;
                         // Adicione mais casos aqui para outros tipos de arquivo
@@ -146,34 +148,33 @@ class Groups_Libraries
                 }
             } else {
                 $apiUrl = "{$this->apiUrl}/message/sendText/{$this->instance}";
-                $posts = createTextMessage($destino, $message, $mentions);
+                $posts  = createTextMessage($destino, $message, $mentions);
             }
 
             if (isset($posts)) {
                 $response = $client->request('POST', $apiUrl, [
                     'headers' => $headers,
-                    'json' => $posts
+                    'json'    => $posts,
                 ]);
 
                 $responseBody = $response->getBody();
-                $json[] = json_decode($responseBody, true);
+                $json[]       = json_decode($responseBody, true);
             }
 
-
             /**
-             * 
+             *
              * Não usar sessions na api, pode dar erro de execução no cron
              * Mudar consulta para busca dados no banco de dados ao invés de usar sessions
-             * 
+             *
              */
             $inserSend[] = [
-                'id_company'  => session('user')['company'],
-                'id_group'    => $destino,
-                'id_user'     => session('user')['id'],
-                'message'     => $message,
-                'code'        => $code
+                'id_company' => session('user')['company'],
+                'id_group'   => $destino,
+                'id_user'    => session('user')['id'],
+                'message'    => $message,
+                'code'       => $code,
             ];
-            
+
         }
 
         $sendsModel = new SendModel();
